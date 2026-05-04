@@ -1,54 +1,97 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>BlackRock Crisis Simulation</title>
+    <title>BlackRock HQ Simulation</title>
     <style>
-        body { background: #1a1a1a; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
-        #grid { display: grid; grid-template-columns: repeat(10, 40px); grid-template-rows: repeat(10, 40px); gap: 2px; background: #333; border: 5px solid #444; margin-top: 20px; }
-        .cell { width: 40px; height: 40px; background: #222; position: relative; }
-        .agent { width: 30px; height: 30px; border-radius: 50%; position: absolute; top: 5px; left: 5px; transition: all 0.5s; font-size: 20px; display: flex; align-items: center; justify-content: center; }
-        #teamA { background: #2ecc71; z-index: 2; }
-        #teamB { background: #e74c3c; z-index: 2; }
-        #log { width: 500px; height: 200px; background: #000; margin-top: 20px; padding: 10px; overflow-y: auto; border: 1px solid #666; font-size: 14px; line-height: 1.5; }
-        .system-msg { color: #aaa; font-style: italic; }
-        .a-msg { color: #2ecc71; font-weight: bold; }
-        .b-msg { color: #e74c3c; font-weight: bold; }
+        :root {
+            --bg-color: #0f172a;
+            --office-color: #1e293b;
+            --grid-line: #334155;
+            --team-a: #10b981;
+            --team-b: #ef4444;
+        }
+        body { background: var(--bg-color); color: white; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        h1 { margin-bottom: 10px; color: #f8fafc; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        
+        /* 오피스 컨테이너 */
+        #office-container { position: relative; padding: 20px; background: #334155; border-radius: 15px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); border: 2px solid #475569; }
+        
+        /* 맵 크기 축소 (6x6 격자) */
+        #grid { display: grid; grid-template-columns: repeat(6, 60px); grid-template-rows: repeat(6, 60px); gap: 4px; background: var(--grid-line); padding: 4px; border-radius: 8px; }
+        .cell { width: 60px; height: 60px; background: var(--office-color); border-radius: 4px; position: relative; transition: background 0.3s; }
+        .cell::after { content: ''; position: absolute; top: 10%; left: 10%; width: 80%; height: 80%; border: 1px dashed rgba(255,255,255,0.05); }
+
+        /* 에이전트 디자인 (이름표 추가) */
+        .agent-wrapper { position: absolute; width: 60px; height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.4s ease-in-out; z-index: 10; }
+        .agent-body { width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 0 15px rgba(0,0,0,0.5); border: 2px solid white; }
+        .agent-name { font-size: 10px; font-weight: bold; margin-bottom: 4px; padding: 2px 6px; border-radius: 10px; white-space: nowrap; }
+        
+        #teamA .agent-body { background: var(--team-a); }
+        #teamA .agent-name { background: var(--team-a); color: white; }
+        #teamB .agent-body { background: var(--team-b); }
+        #teamB .agent-name { background: var(--team-b); color: white; }
+
+        /* 로그 화면 하단 배치 */
+        #log-container { width: 400px; margin-top: 20px; }
+        #log { height: 180px; background: rgba(0,0,0,0.7); padding: 15px; overflow-y: auto; border-radius: 10px; border: 1px solid #475569; font-size: 13px; line-height: 1.6; backdrop-filter: blur(10px); }
+        .system-msg { color: #94a3b8; font-weight: bold; border-bottom: 1px solid #334155; margin-bottom: 5px; display: block; }
+        .a-msg { color: #34d399; }
+        .b-msg { color: #f87171; }
     </style>
 </head>
 <body>
-    <h1>블랙록 위기 대응 시뮬레이션</h1>
-    <div id="grid"></div>
-    <div id="log">시뮬레이션을 준비 중입니다...<br></div>
+    <h1>🏢 BlackRock Global Strategy Room</h1>
+    
+    <div id="office-container">
+        <div id="grid"></div>
+    </div>
+
+    <div id="log-container">
+        <div id="log">
+            <span class="system-msg">시뮬레이션 대기 중...</span>
+        </div>
+    </div>
 
     <script>
         const grid = document.getElementById('grid');
         const log = document.getElementById('log');
-        for (let i = 0; i < 100; i++) grid.innerHTML += '<div class="cell"></div>';
+        const MAP_SIZE = 6; // 6x6으로 축소하여 만남 확률 증가
+
+        // 격자 생성
+        for (let i = 0; i < MAP_SIZE * MAP_SIZE; i++) {
+            grid.innerHTML += '<div class="cell"></div>';
+        }
 
         let posA = { x: 0, y: 0 };
-        let posB = { x: 9, y: 9 };
+        let posB = { x: 5, y: 5 };
 
-        const agentA = document.createElement('div');
-        agentA.id = 'teamA'; agentA.className = 'agent'; agentA.innerHTML = '🤖';
-        const agentB = document.createElement('div');
-        agentB.id = 'teamB'; agentB.className = 'agent'; agentB.innerHTML = '👤';
+        // 에이전트 A 생성 (알라딘)
+        const wrapperA = document.createElement('div');
+        wrapperA.id = 'teamA'; wrapperA.className = 'agent-wrapper';
+        wrapperA.innerHTML = '<span class="agent-name">알라딘(시스템)</span><div class="agent-body">🤖</div>';
+        
+        // 에이전트 B 생성 (매니저)
+        const wrapperB = document.createElement('div');
+        wrapperB.id = 'teamB'; wrapperB.className = 'agent-wrapper';
+        wrapperB.innerHTML = '<span class="agent-name">수석 매니저(직감)</span><div class="agent-body">👤</div>';
 
         function updatePos() {
             const cells = document.querySelectorAll('.cell');
-            cells[posA.y * 10 + posA.x].appendChild(agentA);
-            cells[posB.y * 10 + posB.x].appendChild(agentB);
+            cells[posA.y * MAP_SIZE + posA.x].appendChild(wrapperA);
+            cells[posB.y * MAP_SIZE + posB.x].appendChild(wrapperB);
             checkCollision();
         }
 
         function moveRandomly(pos) {
             const dir = Math.floor(Math.random() * 4);
             if (dir === 0 && pos.y > 0) pos.y--;
-            else if (dir === 1 && pos.y < 9) pos.y++;
+            else if (dir === 1 && pos.y < MAP_SIZE - 1) pos.y++;
             else if (dir === 2 && pos.x > 0) pos.x--;
-            else if (dir === 3 && pos.x < 9) pos.x++;
+            else if (dir === 3 && pos.x < MAP_SIZE - 1) pos.x++;
         }
 
         function checkCollision() {
+            // 인접한 칸(8방향 포함)에 있으면 대화 시작
             if (Math.abs(posA.x - posB.x) <= 1 && Math.abs(posA.y - posB.y) <= 1) {
                 stopSim();
                 startDialogue();
@@ -56,20 +99,24 @@
         }
 
         function startDialogue() {
-            addLog("<span class='system-msg'>[사건 발생] 두 에이전트가 조우했습니다! 논쟁을 시작합니다.</span>");
-            setTimeout(() => addLog("<span class='a-msg'>알라딘:</span> 유가 40% 폭등 감지. 즉각 손절매 후 국채 비중을 늘려야 합니다."), 1000);
-            setTimeout(() => addLog("<span class='b-msg'>매니저:</span> 아니요, 이건 과매도 상황입니다. 지금이 저점 매수 기회예요!"), 3000);
-            setTimeout(() => addLog("<span class='a-msg'>알라딘:</span> 매니저님은 지각의 오류에 빠져 계십니다. 데이터는 하락을 가리킵니다."), 5000);
-            setTimeout(() => addLog("<span class='system-msg'>[결과] 의견 차이로 인해 분산 투자를 결정했습니다.</span>"), 7000);
+            addLog("<span class='system-msg'>📍 전략 회의실에서 두 에이전트가 조우했습니다.</span>");
+            setTimeout(() => addLog("<b class='a-msg'>🤖 알라딘:</b> 호르무즈 봉쇄 리스크 감지. 모든 주식 포지션을 15% 기계적 매도합니다."), 1000);
+            setTimeout(() => addLog("<b class='b-msg'>👤 매니저:</b> 미쳤습니까? 지금 투매에 동참하는 건 손실을 확정 짓는 매몰비용의 오류입니다!"), 3000);
+            setTimeout(() => addLog("<b class='a-msg'>🤖 알라딘:</b> 데이터는 확률을 말합니다. 인간의 낙관주의는 이 상황에서 가장 큰 리스크입니다."), 5000);
+            setTimeout(() => addLog("<b class='b-msg'>👤 매니저:</b> 시장의 공포를 읽어야지 숫자만 봐선 안 돼요. 저는 반대로 에너지주를 쓸어 담겠습니다."), 7000);
+            setTimeout(() => addLog("<span class='system-msg'>📢 결론: 상반된 전략으로 포트폴리오 분산 결정.</span>"), 9000);
         }
 
-        function addLog(msg) { log.innerHTML += msg + "<br>"; log.scrollTop = log.scrollHeight; }
+        function addLog(msg) { 
+            log.innerHTML += "<div>" + msg + "</div>"; 
+            log.scrollTop = log.scrollHeight; 
+        }
 
         let timer = setInterval(() => {
             moveRandomly(posA);
             moveRandomly(posB);
             updatePos();
-        }, 800);
+        }, 600); // 속도도 약간 올렸습니다.
 
         function stopSim() { clearInterval(timer); }
         updatePos();
