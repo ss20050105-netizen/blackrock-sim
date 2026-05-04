@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BlackRock Crisis Simulation</title>
+    <style>
+        body { background: #1a1a1a; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+        #grid { display: grid; grid-template-columns: repeat(10, 40px); grid-template-rows: repeat(10, 40px); gap: 2px; background: #333; border: 5px solid #444; margin-top: 20px; }
+        .cell { width: 40px; height: 40px; background: #222; position: relative; }
+        .agent { width: 30px; height: 30px; border-radius: 50%; position: absolute; top: 5px; left: 5px; transition: all 0.5s; font-size: 20px; display: flex; align-items: center; justify-content: center; }
+        #teamA { background: #2ecc71; z-index: 2; }
+        #teamB { background: #e74c3c; z-index: 2; }
+        #log { width: 500px; height: 200px; background: #000; margin-top: 20px; padding: 10px; overflow-y: auto; border: 1px solid #666; font-size: 14px; line-height: 1.5; }
+        .system-msg { color: #aaa; font-style: italic; }
+        .a-msg { color: #2ecc71; font-weight: bold; }
+        .b-msg { color: #e74c3c; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>블랙록 위기 대응 시뮬레이션</h1>
+    <div id="grid"></div>
+    <div id="log">시뮬레이션을 준비 중입니다...<br></div>
+
+    <script>
+        const grid = document.getElementById('grid');
+        const log = document.getElementById('log');
+        for (let i = 0; i < 100; i++) grid.innerHTML += '<div class="cell"></div>';
+
+        let posA = { x: 0, y: 0 };
+        let posB = { x: 9, y: 9 };
+
+        const agentA = document.createElement('div');
+        agentA.id = 'teamA'; agentA.className = 'agent'; agentA.innerHTML = '🤖';
+        const agentB = document.createElement('div');
+        agentB.id = 'teamB'; agentB.className = 'agent'; agentB.innerHTML = '👤';
+
+        function updatePos() {
+            const cells = document.querySelectorAll('.cell');
+            cells[posA.y * 10 + posA.x].appendChild(agentA);
+            cells[posB.y * 10 + posB.x].appendChild(agentB);
+            checkCollision();
+        }
+
+        function moveRandomly(pos) {
+            const dir = Math.floor(Math.random() * 4);
+            if (dir === 0 && pos.y > 0) pos.y--;
+            else if (dir === 1 && pos.y < 9) pos.y++;
+            else if (dir === 2 && pos.x > 0) pos.x--;
+            else if (dir === 3 && pos.x < 9) pos.x++;
+        }
+
+        function checkCollision() {
+            if (Math.abs(posA.x - posB.x) <= 1 && Math.abs(posA.y - posB.y) <= 1) {
+                stopSim();
+                startDialogue();
+            }
+        }
+
+        function startDialogue() {
+            addLog("<span class='system-msg'>[사건 발생] 두 에이전트가 조우했습니다! 논쟁을 시작합니다.</span>");
+            setTimeout(() => addLog("<span class='a-msg'>알라딘:</span> 유가 40% 폭등 감지. 즉각 손절매 후 국채 비중을 늘려야 합니다."), 1000);
+            setTimeout(() => addLog("<span class='b-msg'>매니저:</span> 아니요, 이건 과매도 상황입니다. 지금이 저점 매수 기회예요!"), 3000);
+            setTimeout(() => addLog("<span class='a-msg'>알라딘:</span> 매니저님은 지각의 오류에 빠져 계십니다. 데이터는 하락을 가리킵니다."), 5000);
+            setTimeout(() => addLog("<span class='system-msg'>[결과] 의견 차이로 인해 분산 투자를 결정했습니다.</span>"), 7000);
+        }
+
+        function addLog(msg) { log.innerHTML += msg + "<br>"; log.scrollTop = log.scrollHeight; }
+
+        let timer = setInterval(() => {
+            moveRandomly(posA);
+            moveRandomly(posB);
+            updatePos();
+        }, 800);
+
+        function stopSim() { clearInterval(timer); }
+        updatePos();
+    </script>
+</body>
+</html>
