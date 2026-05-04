@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>BlackRock HQ Simulation</title>
+    <title>BlackRock HQ Simulation - Talkative Agents</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -11,36 +11,44 @@
             --team-b: #ef4444;
         }
         body { background: var(--bg-color); color: white; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-        h1 { margin-bottom: 10px; color: #f8fafc; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        h1 { margin-bottom: 10px; color: #f8fafc; }
         
-        /* 오피스 컨테이너 */
         #office-container { position: relative; padding: 20px; background: #334155; border-radius: 15px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); border: 2px solid #475569; }
         
-        /* 맵 크기 축소 (6x6 격자) */
-        #grid { display: grid; grid-template-columns: repeat(6, 60px); grid-template-rows: repeat(6, 60px); gap: 4px; background: var(--grid-line); padding: 4px; border-radius: 8px; }
-        .cell { width: 60px; height: 60px; background: var(--office-color); border-radius: 4px; position: relative; transition: background 0.3s; }
-        .cell::after { content: ''; position: absolute; top: 10%; left: 10%; width: 80%; height: 80%; border: 1px dashed rgba(255,255,255,0.05); }
+        #grid { display: grid; grid-template-columns: repeat(6, 70px); grid-template-rows: repeat(6, 70px); gap: 6px; background: var(--grid-line); padding: 6px; border-radius: 8px; }
+        .cell { width: 70px; height: 70px; background: var(--office-color); border-radius: 4px; position: relative; }
 
-        /* 에이전트 디자인 (이름표 추가) */
-        .agent-wrapper { position: absolute; width: 60px; height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.4s ease-in-out; z-index: 10; }
-        .agent-body { width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 0 15px rgba(0,0,0,0.5); border: 2px solid white; }
-        .agent-name { font-size: 10px; font-weight: bold; margin-bottom: 4px; padding: 2px 6px; border-radius: 10px; white-space: nowrap; }
+        /* 에이전트 및 말풍선 스타일 */
+        .agent-wrapper { position: absolute; width: 70px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.6s ease-in-out; z-index: 10; }
+        .agent-body { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 0 15px rgba(0,0,0,0.5); border: 2px solid white; }
+        .agent-name { font-size: 11px; font-weight: bold; margin-bottom: 4px; padding: 2px 8px; border-radius: 10px; }
         
+        /* 말풍선 디자인 */
+        .thought-bubble { 
+            position: absolute; bottom: 75px; background: white; color: #1e293b; 
+            padding: 5px 10px; border-radius: 12px; font-size: 11px; font-weight: bold;
+            white-space: nowrap; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        }
+        .thought-bubble::after {
+            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid white;
+        }
+
         #teamA .agent-body { background: var(--team-a); }
         #teamA .agent-name { background: var(--team-a); color: white; }
         #teamB .agent-body { background: var(--team-b); }
         #teamB .agent-name { background: var(--team-b); color: white; }
 
-        /* 로그 화면 하단 배치 */
-        #log-container { width: 400px; margin-top: 20px; }
-        #log { height: 180px; background: rgba(0,0,0,0.7); padding: 15px; overflow-y: auto; border-radius: 10px; border: 1px solid #475569; font-size: 13px; line-height: 1.6; backdrop-filter: blur(10px); }
-        .system-msg { color: #94a3b8; font-weight: bold; border-bottom: 1px solid #334155; margin-bottom: 5px; display: block; }
+        #log-container { width: 450px; margin-top: 20px; }
+        #log { height: 150px; background: rgba(0,0,0,0.7); padding: 15px; overflow-y: auto; border-radius: 10px; border: 1px solid #475569; font-size: 13px; line-height: 1.6; }
+        .system-msg { color: #94a3b8; font-weight: bold; display: block; margin-bottom: 5px; }
         .a-msg { color: #34d399; }
         .b-msg { color: #f87171; }
     </style>
 </head>
 <body>
-    <h1>🏢 BlackRock Global Strategy Room</h1>
+    <h1>🏢 BlackRock HQ Strategy Room</h1>
     
     <div id="office-container">
         <div id="grid"></div>
@@ -48,37 +56,57 @@
 
     <div id="log-container">
         <div id="log">
-            <span class="system-msg">시뮬레이션 대기 중...</span>
+            <span class="system-msg">시뮬레이션 가동 중... (에이전트들이 상황을 분석합니다)</span>
         </div>
     </div>
 
     <script>
         const grid = document.getElementById('grid');
         const log = document.getElementById('log');
-        const MAP_SIZE = 6; // 6x6으로 축소하여 만남 확률 증가
+        const MAP_SIZE = 6;
 
-        // 격자 생성
-        for (let i = 0; i < MAP_SIZE * MAP_SIZE; i++) {
-            grid.innerHTML += '<div class="cell"></div>';
-        }
+        for (let i = 0; i < MAP_SIZE * MAP_SIZE; i++) grid.innerHTML += '<div class="cell"></div>';
 
         let posA = { x: 0, y: 0 };
         let posB = { x: 5, y: 5 };
+        let isSimRunning = true;
 
-        // 에이전트 A 생성 (알라딘)
-        const wrapperA = document.createElement('div');
-        wrapperA.id = 'teamA'; wrapperA.className = 'agent-wrapper';
-        wrapperA.innerHTML = '<span class="agent-name">알라딘(시스템)</span><div class="agent-body">🤖</div>';
-        
-        // 에이전트 B 생성 (매니저)
-        const wrapperB = document.createElement('div');
-        wrapperB.id = 'teamB'; wrapperB.className = 'agent-wrapper';
-        wrapperB.innerHTML = '<span class="agent-name">수석 매니저(직감)</span><div class="agent-body">👤</div>';
+        // 알라딘 혼잣말 후보
+        const thoughtsA = ["리스크 신호 발생...", "데이터 재분석 중..", "전부 팔아야 할지도..", "확률이 낮아지고 있어.", "시스템 과열 감지."];
+        // 매니저 혼잣말 후보
+        const thoughtsB = ["지금이 기회인데..", "차트가 예사롭지 않아.", "전부 사야 돼..!", "인간의 직감을 믿자.", "공포에 사야 한다.."];
+
+        function createAgent(id, name, emoji, thoughts) {
+            const wrapper = document.createElement('div');
+            wrapper.id = id; wrapper.className = 'agent-wrapper';
+            wrapper.innerHTML = `
+                <div class="thought-bubble" id="${id}-thought"></div>
+                <span class="agent-name">${name}</span>
+                <div class="agent-body">${emoji}</div>
+            `;
+            return wrapper;
+        }
+
+        const wrapperA = createAgent('teamA', '알라딘', '🤖');
+        const wrapperB = createAgent('teamB', '매니저', '👤');
+
+        function showThought(id, thoughts) {
+            if (!isSimRunning) return;
+            const bubble = document.getElementById(`${id}-thought`);
+            bubble.innerText = thoughts[Math.floor(Math.random() * thoughts.length)];
+            bubble.style.opacity = 1;
+            setTimeout(() => { bubble.style.opacity = 0; }, 2000);
+        }
 
         function updatePos() {
             const cells = document.querySelectorAll('.cell');
             cells[posA.y * MAP_SIZE + posA.x].appendChild(wrapperA);
             cells[posB.y * MAP_SIZE + posB.x].appendChild(wrapperB);
+            
+            // 30% 확률로 혼잣말 출력
+            if (Math.random() < 0.3) showThought('teamA', thoughtsA);
+            if (Math.random() < 0.3) showThought('teamB', thoughtsB);
+            
             checkCollision();
         }
 
@@ -91,20 +119,20 @@
         }
 
         function checkCollision() {
-            // 인접한 칸(8방향 포함)에 있으면 대화 시작
             if (Math.abs(posA.x - posB.x) <= 1 && Math.abs(posA.y - posB.y) <= 1) {
-                stopSim();
+                isSimRunning = false;
+                clearInterval(timer);
                 startDialogue();
             }
         }
 
         function startDialogue() {
-            addLog("<span class='system-msg'>📍 전략 회의실에서 두 에이전트가 조우했습니다.</span>");
-            setTimeout(() => addLog("<b class='a-msg'>🤖 알라딘:</b> 호르무즈 봉쇄 리스크 감지. 모든 주식 포지션을 15% 기계적 매도합니다."), 1000);
-            setTimeout(() => addLog("<b class='b-msg'>👤 매니저:</b> 미쳤습니까? 지금 투매에 동참하는 건 손실을 확정 짓는 매몰비용의 오류입니다!"), 3000);
-            setTimeout(() => addLog("<b class='a-msg'>🤖 알라딘:</b> 데이터는 확률을 말합니다. 인간의 낙관주의는 이 상황에서 가장 큰 리스크입니다."), 5000);
-            setTimeout(() => addLog("<b class='b-msg'>👤 매니저:</b> 시장의 공포를 읽어야지 숫자만 봐선 안 돼요. 저는 반대로 에너지주를 쓸어 담겠습니다."), 7000);
-            setTimeout(() => addLog("<span class='system-msg'>📢 결론: 상반된 전략으로 포트폴리오 분산 결정.</span>"), 9000);
+            addLog("<span class='system-msg'>📍 전략 회의실 조우: 심층 논쟁 시작</span>");
+            setTimeout(() => addLog("<b class='a-msg'>🤖 알라딘:</b> 호르무즈 해협 봉쇄 데이터 기반, 즉각적인 전량 매도를 제안합니다."), 1000);
+            setTimeout(() => addLog("<b class='b-msg'>👤 매니저:</b> 절대 안 됩니다. 시장의 패닉을 역이용해 '풀 매수'를 때려야 할 시점입니다!"), 3500);
+            setTimeout(() => addLog("<b class='a-msg'>🤖 알라딘:</b> 시스템은 감정을 배제합니다. 손실 방어가 최우선입니다."), 6000);
+            setTimeout(() => addLog("<b class='b-msg'>👤 매니저:</b> 숫자가 전부는 아니죠. 제 오랜 경험이 지금이 기회라고 말하고 있습니다."), 8500);
+            setTimeout(() => addLog("<span class='system-msg'>📢 시뮬레이션 종료: 상반된 의사결정 기록됨.</span>"), 11000);
         }
 
         function addLog(msg) { 
@@ -112,13 +140,13 @@
             log.scrollTop = log.scrollHeight; 
         }
 
+        // 속도를 조절했습니다 (0.6초 -> 1.2초로 느리게)
         let timer = setInterval(() => {
             moveRandomly(posA);
             moveRandomly(posB);
             updatePos();
-        }, 600); // 속도도 약간 올렸습니다.
+        }, 1200);
 
-        function stopSim() { clearInterval(timer); }
         updatePos();
     </script>
 </body>
