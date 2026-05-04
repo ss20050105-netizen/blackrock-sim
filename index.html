@@ -104,8 +104,8 @@
             cells[posB.y * MAP_SIZE + posB.x].appendChild(wrapperB);
             
             // 30% 확률로 혼잣말 출력
-            if (Math.random() < 0.3) showThought('teamA', thoughtsA);
-            if (Math.random() < 0.3) showThought('teamB', thoughtsB);
+            if (Math.random() < 0.7) showThought('teamA', thoughtsA);
+            if (Math.random() < 0.7) showThought('teamB', thoughtsB);
             
             checkCollision();
         }
