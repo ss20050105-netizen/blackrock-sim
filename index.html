@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>BlackRock HQ Simulation - Advanced Logic</title>
+    <title>BlackRock HQ Simulation - Memory System</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -14,7 +14,6 @@
         
         #office-container { position: relative; padding: 20px; background: #334155; border-radius: 15px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4); border: 2px solid #475569; }
         
-        /* 5x5 맵 설정 */
         #grid { display: grid; grid-template-columns: repeat(5, 80px); grid-template-rows: repeat(5, 80px); gap: 8px; background: var(--grid-line); padding: 8px; border-radius: 8px; }
         .cell { width: 80px; height: 80px; background: var(--office-color); border-radius: 4px; position: relative; }
 
@@ -54,7 +53,7 @@
 
     <div id="log-container">
         <div id="log">
-            <span class="system-msg">시스템 가동: 5x5 근접 감시 모드 활성화</span>
+            <span class="system-msg">시스템 가동: 영구 중복 방지 메모리 로직 활성화</span>
         </div>
     </div>
 
@@ -68,21 +67,19 @@
         let posA = { x: 0, y: 0 };
         let posB = { x: 4, y: 4 };
         let isSimRunning = true;
-        let lastThoughtA = "";
-        let lastThoughtB = "";
 
-        // 확장된 혼잣말 데이터셋 (중복 방지 로직 적용됨)
-        const thoughtsA = [
+        // 혼잣말 목록 (한번 사용하면 제거됨)
+        let thoughtsA = [
             "알고리즘 연산 중...", "VIX 지수 급등 확인.", "0.1%의 오차도 허용 안 함.", 
             "리스크 오프 시그널 포착.", "과거 2008년 패턴과 유사함.", "감정을 배제하고 매도 준비.", 
             "시스템 냉각 최적화 중.", "금리 변동성 실시간 추적.", "분석 결과: 하락 확률 89%.", 
-            "인간의 직관은 변수일 뿐."
+            "인간의 직관은 변수일 뿐.", "호르무즈 해협 위성 데이터 수신.", "포트폴리오 리밸런싱 개시."
         ];
-        const thoughtsB = [
+        let thoughtsB = [
             "시장의 냄새가 달라...", "지금 안 사면 후회한다.", "차트 너머를 봐야 해.", 
             "공포가 곧 돈이다.", "내 감은 틀린 적 없어.", "풀 매수 타이밍 잡는 중.", 
             "연준의 움직임을 예측하자.", "위기는 곧 부의 재편이지.", "이 정도 패닉은 기회다.", 
-            "데이터는 후행지표일 뿐."
+            "데이터는 후행지표일 뿐.", "베테랑의 직감을 믿어보자.", "투매가 멈추는 지점을 찾자."
         ];
 
         function createAgent(id, name, emoji) {
@@ -99,20 +96,20 @@
         const wrapperA = createAgent('teamA', '알라딘', '🤖');
         const wrapperB = createAgent('teamB', '매니저', '👤');
 
-        function showThought(id, thoughts, lastThoughtVar) {
-            if (!isSimRunning) return;
+        function showThought(id, thoughtList) {
+            if (!isSimRunning || thoughtList.length === 0) return;
+            
             const bubble = document.getElementById(`${id}-thought`);
             
-            // 중복 방지 로직: 이전과 다른 말이 나올 때까지 랜덤 선택
-            let newThought;
-            do {
-                newThought = thoughts[Math.floor(Math.random() * thoughts.length)];
-            } while (newThought === lastThoughtVar);
+            // 1. 랜덤으로 인덱스 선택
+            const randomIndex = Math.floor(Math.random() * thoughtList.length);
             
-            bubble.innerText = newThought;
+            // 2. 선택된 말 추출 및 목록에서 영구 삭제
+            const selectedThought = thoughtList.splice(randomIndex, 1)[0];
+            
+            bubble.innerText = selectedThought;
             bubble.style.opacity = 1;
             setTimeout(() => { bubble.style.opacity = 0; }, 2500);
-            return newThought;
         }
 
         function updatePos() {
@@ -120,9 +117,9 @@
             cells[posA.y * MAP_SIZE + posA.x].appendChild(wrapperA);
             cells[posB.y * MAP_SIZE + posB.x].appendChild(wrapperB);
             
-            // 확률 70%로 혼잣말 출력
-            if (Math.random() < 0.7) lastThoughtA = showThought('teamA', thoughtsA, lastThoughtA);
-            if (Math.random() < 0.7) lastThoughtB = showThought('teamB', thoughtsB, lastThoughtB);
+            // 확률 70%로 혼잣말 출력 (목록이 남아있을 때만)
+            if (Math.random() < 0.7) showThought('teamA', thoughtsA);
+            if (Math.random() < 0.7) showThought('teamB', thoughtsB);
             
             checkCollision();
         }
@@ -144,12 +141,12 @@
         }
 
         function startDialogue() {
-            addLog("<span class='system-msg'>🚨 [긴급 조우] 핵심 전략 충돌 발생</span>");
-            setTimeout(() => addLog("<b class='a-msg'>🤖 알라딘:</b> 호르무즈 봉쇄 확정. 즉각적인 하방 헷지 및 전량 매도를 실행하겠습니다."), 1000);
-            setTimeout(() => addLog("<b class='b-msg'>👤 매니저:</b> 멈춰요! 지금은 공포를 사는 구간입니다. 저가 매수로 대응해야 합니다!"), 3500);
-            setTimeout(() => addLog("<b class='a-msg'>🤖 알라딘:</b> 데이터는 추가 하락을 지시합니다. 인간의 고집은 자산 파괴의 주범입니다."), 6000);
-            setTimeout(() => addLog("<b class='b-msg'>👤 매니저:</b> 시스템이 읽지 못하는 '반등의 심리'가 있습니다. 공격적 베팅을 승인하세요."), 8500);
-            setTimeout(() => addLog("<span class='system-msg'>📢 [시뮬레이션 완료] 상반된 조직행위론적 태도 확인.</span>"), 11000);
+            addLog("<span class='system-msg'>🚨 [긴급 조우] 전략 기획실 회의 소집</span>");
+            setTimeout(() => addLog("<b class='a-msg'>🤖 알라딘:</b> 시장 붕괴 확률 임계점 돌파. 즉시 전 자산 매도 및 현금 확보를 권고합니다."), 1000);
+            setTimeout(() => addLog("<b class='b-msg'>👤 매니저:</b> 아니요, 과매도 구간입니다. 지금은 리스크를 안고 공격적으로 수익을 극대화할 때입니다!"), 3500);
+            setTimeout(() => addLog("<b class='a-msg'>🤖 알라딘:</b> 알고리즘은 감정에 휘둘리지 않습니다. 데이터가 말하는 위험 신호를 무시하지 마십시오."), 6000);
+            setTimeout(() => addLog("<b class='b-msg'>👤 매니저:</b> 때로는 데이터보다 '동물적 감각'이 정확합니다. 반등의 신호가 보입니다!"), 8500);
+            setTimeout(() => addLog("<span class='system-msg'>📢 [분석 완료] 상반된 조직행위론적 태도와 의사결정 방식 기록됨.</span>"), 11000);
         }
 
         function addLog(msg) { 
@@ -157,7 +154,6 @@
             log.scrollTop = log.scrollHeight; 
         }
 
-        // 이동 속도 1.5초로 변경
         let timer = setInterval(() => {
             moveRandomly(posA);
             moveRandomly(posB);
